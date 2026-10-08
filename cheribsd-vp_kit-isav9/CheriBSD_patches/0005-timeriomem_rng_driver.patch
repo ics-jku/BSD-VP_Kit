@@ -1,0 +1,180 @@
+From e9833918383e515eaa26a506c6508ed9eb30d8ee Mon Sep 17 00:00:00 2001
+From: ahinterd <ahinterd@gmail.com>
+Date: Thu, 23 Apr 2026 15:07:38 +0200
+Subject: [PATCH] Timeriomem_rng driver
+
+---
+ sys/conf/files                          |   1 +
+ sys/dev/timeriomem_rng/timeriomem_rng.c | 132 ++++++++++++++++++++++++
+ sys/riscv/conf/GENERIC_WITH_ROOTFS      |  10 ++
+ 3 files changed, 143 insertions(+)
+ create mode 100644 sys/dev/timeriomem_rng/timeriomem_rng.c
+ create mode 100644 sys/riscv/conf/GENERIC_WITH_ROOTFS
+
+diff --git a/sys/conf/files b/sys/conf/files
+index f52b7a952209..4a0a514cc09c 100644
+--- a/sys/conf/files
++++ b/sys/conf/files
+@@ -5428,3 +5428,4 @@ xdr/xdr_mbuf.c			optional xdr | krpc | nfslockd | nfscl | nfsd | zfs
+ xdr/xdr_mem.c			optional xdr | krpc | nfslockd | nfscl | nfsd | zfs
+ xdr/xdr_reference.c		optional xdr | krpc | nfslockd | nfscl | nfsd | zfs
+ xdr/xdr_sizeof.c		optional xdr | krpc | nfslockd | nfscl | nfsd | zfs
++dev/timeriomem_rng/timeriomem_rng.c optional timeriomem_rng
+diff --git a/sys/dev/timeriomem_rng/timeriomem_rng.c b/sys/dev/timeriomem_rng/timeriomem_rng.c
+new file mode 100644
+index 000000000000..2773f55e71c4
+--- /dev/null
++++ b/sys/dev/timeriomem_rng/timeriomem_rng.c
+@@ -0,0 +1,132 @@
++#include <sys/param.h>
++#include <sys/bus.h>
++#include <sys/kernel.h>
++#include <sys/module.h>
++#include <sys/rman.h>
++#include <sys/stdatomic.h>
++
++#include <machine/bus.h>
++
++#include <dev/ofw/ofw_bus.h>
++#include <dev/ofw/ofw_bus_subr.h>
++
++#include <sys/random.h>
++#include <dev/random/randomdev.h>
++
++struct trng_softc {
++    device_t dev;
++    int rid;
++    struct resource *res;
++};
++
++static struct ofw_compat_data trng_compat[] = {
++	{ "timeriomem_rng", 1 },
++	{ NULL, 0 }
++};
++
++static _Atomic(struct trng_softc *) g_trng_softc;
++
++static u_int trng_read(void *buf, u_int c);
++
++static struct random_source random_timeriomem = {
++	.rs_ident = "TimerIO Memory RNG",
++	.rs_source = RANDOM_PURE_SAFE,
++	.rs_read = trng_read,
++};
++
++static int
++trng_probe(device_t dev)
++{
++    if (!ofw_bus_status_okay(dev))
++        return (ENXIO);
++
++    if (ofw_bus_search_compatible(dev, trng_compat)->ocd_data != 0) {
++        device_set_desc(dev, "TimerIO Memory RNG");
++        return (BUS_PROBE_DEFAULT);
++    }
++
++ 	return (ENXIO);
++}
++
++static u_int
++trng_read(void *buf, u_int c)
++{
++ 	struct trng_softc *sc;
++    u_int count;
++    uint32_t val;
++
++    sc = atomic_load_explicit(&g_trng_softc, memory_order_acquire);
++    if (sc == NULL || sc->res == NULL)
++        return (0);
++
++    for (count = 0; count + sizeof(val) <= c; count += sizeof(val)) {
++        val = bus_read_4(sc->res, 0);
++        memcpy((uint8_t *)buf + count, &val, sizeof(val));
++    }
++
++ 	return (count);
++}
++
++static int
++trng_attach(device_t dev)
++{
++ 	struct trng_softc *sc;
++    struct trng_softc *exp;
++
++    sc = device_get_softc(dev);
++    sc->dev = dev;
++    sc->rid = 0;
++
++ 	sc->res = bus_alloc_resource_any(dev, SYS_RES_MEMORY, &sc->rid,
++        RF_ACTIVE);
++ 	if (sc->res == NULL)
++        return (ENXIO);
++
++ 	exp = NULL;
++    if (!atomic_compare_exchange_strong_explicit(&g_trng_softc, &exp, sc,
++        memory_order_release, memory_order_acquire)) {
++        bus_release_resource(dev, SYS_RES_MEMORY, sc->rid, sc->res);
++        sc->res = NULL;
++        return (EBUSY);
++    }
++
++ 	random_source_register(&random_timeriomem);
++    device_printf(dev, "attached\n");
++
++ 	return (0);
++}
++
++static int
++trng_detach(device_t dev)
++{
++ 	struct trng_softc *sc;
++
++ 	sc = device_get_softc(dev);
++    random_source_deregister(&random_timeriomem);
++
++ 	if (sc->res != NULL) {
++        bus_release_resource(dev, SYS_RES_MEMORY, sc->rid, sc->res);
++        sc->res = NULL;
++    }
++    atomic_store_explicit(&g_trng_softc, NULL, memory_order_release);
++
++ 	return (0);
++}
++
++static device_method_t trng_methods[] = {
++    DEVMETHOD(device_probe,     trng_probe),
++    DEVMETHOD(device_attach,    trng_attach),
++    DEVMETHOD(device_detach,    trng_detach),
++
++    DEVMETHOD_END
++};
++
++static driver_t trng_driver = {
++ 	"timeriomem_rng",
++    trng_methods,
++    sizeof(struct trng_softc),
++};
++
++DRIVER_MODULE(timeriomem_rng, simplebus, trng_driver, 0, 0);
++MODULE_VERSION(timeriomem_rng, 1);
++MODULE_DEPEND(timeriomem_rng, randomdev, 1, 1, 1);
+\ No newline at end of file
+diff --git a/sys/riscv/conf/GENERIC_WITH_ROOTFS b/sys/riscv/conf/GENERIC_WITH_ROOTFS
+new file mode 100644
+index 000000000000..ac5e2818d19e
+--- /dev/null
++++ b/sys/riscv/conf/GENERIC_WITH_ROOTFS
+@@ -0,0 +1,10 @@
++include		"GENERIC-NODEBUG"
++include     "std.CHERI-PURECAP"
++
++options 	MD_ROOT
++options 	MD_ROOT_SIZE=524288	# 512MiB ram disk
++makeoptions	MFS_IMAGE=/var/home/ahinterd/git/cheribsd-vp_kit/build/rootfs.ufs2
++options 	ROOTDEVNAME=\"ufs:/dev/md0\"
++device timeriomem_rng
++#options     DEBUG=1
++#options         VERBOSE_SYSINIT=0
+-- 
+2.47.3
+

@@ -1,0 +1,9 @@
+include		"GENERIC-NODEBUG"
+include     "std.CHERI-PURECAP"
+include     "std.CHERI-NOCAPREVOKE"
+
+options 	MD_ROOT
+options 	MD_ROOT_SIZE=524288	# 512MiB ram disk
+makeoptions	MFS_IMAGE=@CHERIBSD_ROOTFS_IMG@
+options 	ROOTDEVNAME=\"ufs:/dev/md0\"
+device timeriomem_rng
