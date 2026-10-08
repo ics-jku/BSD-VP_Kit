@@ -1,0 +1,40 @@
+From daea7505ee1c2608c85c9c2a02230375271cafdb Mon Sep 17 00:00:00 2001
+From: Manfred SCHLAEGL <manfred.schlaegl@gmx.at>
+Date: Fri, 21 Feb 2025 14:02:07 +0100
+Subject: [PATCH] fix kernel build (embed mfs) for linux
+
+---
+ sys/tools/embed_mfs.sh | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/sys/tools/embed_mfs.sh b/sys/tools/embed_mfs.sh
+index 9bf5e52202b1..bbfdb43c3d48 100644
+--- a/sys/tools/embed_mfs.sh
++++ b/sys/tools/embed_mfs.sh
+@@ -42,7 +42,13 @@ if [ ! -w "$1" ]; then
+ 	exit 1
+ fi
+ 
+-mfs_size=`stat -f '%z' $2 2> /dev/null`
++if [ `uname` = "Linux" ] ; then
++	mfs_size=`stat -c '%s' $2 2> /dev/null`
++else
++	# TODO: MAC?
++	mfs_size=`stat -f '%z' $2 2> /dev/null`
++fi
++
+ # If we can't determine MFS image size - bail.
+ if [ -z ${mfs_size} ]; then
+ 	echo "Can't determine MFS image size"
+@@ -51,7 +57,7 @@ fi
+ 
+ err_no_mfs="Can't locate mfs section within "
+ 
+-if file -b $1 | grep -q '^ELF ..-bit .SB executable'; then
++if /usr/bin/file -b $1 | grep -q '^ELF ..-bit .SB executable'; then
+ 
+ 	sec_info=`elfdump -c $1 2> /dev/null | grep -A 5 -E "sh_name: oldmfs$"`
+ 	# If we can't find the mfs section within the given kernel - bail.
+-- 
+2.39.5
+

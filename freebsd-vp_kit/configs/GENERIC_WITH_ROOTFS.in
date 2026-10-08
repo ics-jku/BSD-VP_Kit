@@ -1,0 +1,11 @@
+include		"GENERIC-NODEBUG"
+
+options 	MD_ROOT
+options 	MD_ROOT_SIZE=524288	# 512MiB ram disk
+makeoptions	MFS_IMAGE=@FREEBSD_ROOTFS_IMG@
+options 	ROOTDEVNAME=\"ufs:/dev/md0\"
+device timeriomem_rng
+
+# Dependencies of the newer drivers in this FreeBSD revision's std.allwinner.
+device fdt_pinctrl	# aw_gpio
+device nvmem		# aw_sid (used by awg)

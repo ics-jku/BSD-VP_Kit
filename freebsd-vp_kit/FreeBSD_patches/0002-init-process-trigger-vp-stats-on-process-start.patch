@@ -1,0 +1,26 @@
+From 4d1e758c1b17fe784cfa01d14b7cfadb58dba272 Mon Sep 17 00:00:00 2001
+From: Manfred SCHLAEGL <manfred.schlaegl@gmx.at>
+Date: Fri, 27 Jun 2025 13:13:12 +0200
+Subject: [PATCH] init process: trigger vp stats on process start
+
+---
+ sbin/init/init.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sbin/init/init.c b/sbin/init/init.c
+index f49d7301b998..b455833dae14 100644
+--- a/sbin/init/init.c
++++ b/sbin/init/init.c
+@@ -211,6 +211,9 @@ main(int argc, char *argv[])
+ 	if (getuid() != 0)
+ 		errx(1, "%s", strerror(EPERM));
+ 
++	uint64_t instret0;
++	asm volatile ("csrr %0, instret" : "=r" (instret0));
++
+ 	BOOTTRACE("init(8) starting...");
+ 
+ 	/* System V users like to reexec init. */
+-- 
+2.39.5
+

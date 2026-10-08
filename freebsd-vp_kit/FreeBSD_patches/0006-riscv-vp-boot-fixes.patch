@@ -1,0 +1,69 @@
+diff --git a/sys/riscv/riscv/fpe.c b/sys/riscv/riscv/fpe.c
+index b6c66e5e4f09..1f1d3e5eb798 100644
+--- a/sys/riscv/riscv/fpe.c
++++ b/sys/riscv/riscv/fpe.c
+@@ -101,7 +101,7 @@ fpe_store(struct fpreg *regs)
+ 	    "fsd	f29, (16 * 29)(%1)\n"
+ 	    "fsd	f30, (16 * 30)(%1)\n"
+ 	    "fsd	f31, (16 * 31)(%1)\n"
+-	    : "=&r"(fcsr), "=r"(fp_x), "=m"(*fp_x));
++	    : "=&r"(fcsr), "+r"(fp_x), "=m"(*fp_x));
+ 
+ 	regs->fp_fcsr = fcsr;
+ }
+diff --git a/sys/riscv/riscv/trap.c b/sys/riscv/riscv/trap.c
+index d6df1245a24e..71f2665dcafe 100644
+--- a/sys/riscv/riscv/trap.c
++++ b/sys/riscv/riscv/trap.c
+@@ -402,7 +402,6 @@ do_trap_user(struct trapframe *frame)
+ 		intr_irq_handler(frame, INTR_ROOT_IRQ);
+ 		return;
+ 	}
+-	intr_enable();
+ 
+ 	CTR4(KTR_TRAP, "%s: exception=%lu, sepc=%#lx, stval=%#lx", __func__,
+ 	    exception, frame->tf_sepc, frame->tf_stval);
+@@ -411,6 +410,7 @@ do_trap_user(struct trapframe *frame)
+ 	case SCAUSE_LOAD_ACCESS_FAULT:
+ 	case SCAUSE_STORE_ACCESS_FAULT:
+ 	case SCAUSE_INST_ACCESS_FAULT:
++		intr_enable();
+ 		call_trapsignal(td, SIGBUS, BUS_ADRERR, (void *)frame->tf_sepc,
+ 		    exception);
+ 		userret(td, frame);
+@@ -418,6 +418,7 @@ do_trap_user(struct trapframe *frame)
+ 	case SCAUSE_LOAD_MISALIGNED:
+ 	case SCAUSE_STORE_MISALIGNED:
+ 	case SCAUSE_INST_MISALIGNED:
++		intr_enable();
+ 		call_trapsignal(td, SIGBUS, BUS_ADRALN, (void *)frame->tf_sepc,
+ 		    exception);
+ 		userret(td, frame);
+@@ -425,13 +426,19 @@ do_trap_user(struct trapframe *frame)
+ 	case SCAUSE_STORE_PAGE_FAULT:
+ 	case SCAUSE_LOAD_PAGE_FAULT:
+ 	case SCAUSE_INST_PAGE_FAULT:
++		/*
++		 * Avoid VP nested-interrupt trapframe corruption during user
++		 * faults.
++		 */
+ 		page_fault_handler(frame, 1);
+ 		break;
+ 	case SCAUSE_ECALL_USER:
++		intr_enable();
+ 		frame->tf_sepc += 4;	/* Next instruction */
+ 		ecall_handler();
+ 		break;
+ 	case SCAUSE_ILLEGAL_INSTRUCTION:
++		intr_enable();
+ 		if ((pcb->pcb_fpflags & PCB_FP_STARTED) == 0) {
+ 			/*
+ 			 * May be a FPE trap. Enable FPE usage
+@@ -448,6 +455,7 @@ do_trap_user(struct trapframe *frame)
+ 		userret(td, frame);
+ 		break;
+ 	case SCAUSE_BREAKPOINT:
++		intr_enable();
+ 		call_trapsignal(td, SIGTRAP, TRAP_BRKPT, (void *)frame->tf_sepc,
+ 		    exception);
+ 		userret(td, frame);

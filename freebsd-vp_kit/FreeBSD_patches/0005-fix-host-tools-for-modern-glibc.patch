@@ -1,0 +1,38 @@
+diff --git a/tools/build/cross-build/include/common/sys/cdefs.h b/tools/build/cross-build/include/common/sys/cdefs.h
+index 3f9b7866141f..36b5529a33bb 100644
+--- a/tools/build/cross-build/include/common/sys/cdefs.h
++++ b/tools/build/cross-build/include/common/sys/cdefs.h
+@@ -151,6 +151,12 @@
+ #endif
+ #endif
+ 
++/* glibc's pthread structures have a field named __unused.  Parse them
++ * before defining the FreeBSD annotation with the same name. */
++#if defined(__linux__) && defined(__GLIBC__)
++#include <bits/pthreadtypes.h>
++#endif
++
+ #ifndef __unused
+ #define __unused __attribute__((unused))
+ #endif
+diff --git a/tools/build/cross-build/include/linux/string.h b/tools/build/cross-build/include/linux/string.h
+index b6d2fe488d40..11ed537bbdfd 100644
+--- a/tools/build/cross-build/include/linux/string.h
++++ b/tools/build/cross-build/include/linux/string.h
+@@ -62,3 +62,16 @@ void explicit_bzero(void *buf, size_t len);
+ __END_DECLS
+ 
+ #include_next <string.h>
++
++/* _GNU_SOURCE also enables glibc's C23 const-preserving macros, even for
++ * the pre-C23 C dialects used by our host tools.  Use the underlying C
++ * functions to retain the FreeBSD/pre-C23 interfaces those sources expect.
++ * Leave the C++ overloads and actual C23 compilations alone. */
++#if defined(__GLIBC__) && !defined(__cplusplus) && \
++    (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
++#undef memchr
++#undef strchr
++#undef strrchr
++#undef strpbrk
++#undef strstr
++#endif
