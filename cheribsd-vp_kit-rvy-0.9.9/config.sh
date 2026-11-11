@@ -1,0 +1,35 @@
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+MAKEFS_BIN=$ROOT_DIR/tools/makefs/src/makefs
+CHERIBSD_OBJDIRPREFIX=$ROOT_DIR/build/obj
+CHERIBSD_METALOG=$ROOT_DIR/build/METALOG.world
+CHERIBSD_DESTDIR=$ROOT_DIR/build/destdir
+CHERIBSD_DESTDIR_REDUCED=$ROOT_DIR/build/destdir_reduced
+CHERIBSD_DESTDIR_PREPARED=$ROOT_DIR/build/destdir_prepared
+CHERIBSD_ROOTFS_IMG=$ROOT_DIR/build/rootfs.ufs2
+CHERIBSD_DESTDIR_KERNEL=$ROOT_DIR/build/destdir_kernel
+FINAL_KERNEL_IMG=$ROOT_DIR/build/CheriBSD_kernel_rootfs.elf
+
+OPENSBI_DIR=$ROOT_DIR/cheri-alliance-opensbi
+OPENSBI_INSTALL_DIR=${OPENSBI_INSTALL_DIR:-$ROOT_DIR/build/opensbi-install}
+OPENSBI_FW_JUMP_ADDR=${OPENSBI_FW_JUMP_ADDR:-0x80200000}
+OPENSBI_FW_FDT_ADDR=${OPENSBI_FW_FDT_ADDR:-0x82200000}
+OPENSBI_RISCV_MARCH=${OPENSBI_RISCV_MARCH:-rv64imafdc_zyhybrid_zylevels1b}
+OPENSBI_RISCV_ABI=${OPENSBI_RISCV_ABI:-l64pc128d}
+OPENSBI_PLATFORM_RISCV_ISA=${OPENSBI_PLATFORM_RISCV_ISA:-rv64imac_zyhybrid_zylevels1b}
+OPENSBI_PLATFORM_RISCV_ABI=${OPENSBI_PLATFORM_RISCV_ABI:-l64pc128}
+
+# Override these paths in the environment or adjust them for your installation.
+CHERI_BIN_DIR=${CHERI_BIN_DIR:-$HOME/cheri/llvm-099/bin}
+RISC_V_VP_PATH=${RISC_V_VP_PATH:-$HOME/riscv-vp-plusplus}
+RISC_V_VP_BIN=${RISC_V_VP_BIN:-$RISC_V_VP_PATH/vp/build/bin/qemu_virt64y-sc-vp}
+RISC_V_VP_DTB=${RISC_V_VP_DTB:-$RISC_V_VP_PATH/vp/build/bin/qemu_virt64y-sc-vp.dtb}
+
+HOST_CC=${HOST_CC:-/usr/bin/clang}
+HOST_CXX=${HOST_CXX:-/usr/bin/clang++}
+HOST_CPP=${HOST_CPP:-/usr/bin/clang-cpp}
+HOST_STRIPBIN=${HOST_STRIPBIN:-/usr/bin/strip}
+
+CHERIBSD_TARGET=${CHERIBSD_TARGET:-riscv}
+CHERIBSD_TARGET_ARCH=${CHERIBSD_TARGET_ARCH:-riscv64c}
+CHERIBSD_TARGET_CPUTYPE=${CHERIBSD_TARGET_CPUTYPE:-rvy}

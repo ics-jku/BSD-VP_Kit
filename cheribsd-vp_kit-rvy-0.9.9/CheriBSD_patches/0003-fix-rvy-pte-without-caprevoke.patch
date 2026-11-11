@@ -1,0 +1,76 @@
+Subject: [PATCH] riscv: use the RVY PTE Y bit without capability revocation
+
+The non-revocation kernel must leave Svyrg PTE bits 57:55 clear.
+Use bit 58 for capability permissions, omit separate capability-dirty
+tracking, and keep sstatus.YRGE clear. Preserve the revocation encoding.
+
+diff --git a/sys/riscv/include/pte.h b/sys/riscv/include/pte.h
+--- a/sys/riscv/include/pte.h
++++ b/sys/riscv/include/pte.h
+@@ -97,28 +97,42 @@
+ #define	PTE_KERN_CHERI	PTE_CW
+ #define	PTE_PROMOTE_CHERI (PTE_CW | PTE_CRG)
+ #elif defined(__riscv_y)
++#define	PTE_Y		(1UL << 58) /* Capability RW without Svyrg */
++
++#ifdef CHERI_CAPREVOKE
+ /* RVY 0.9.8 Svyrg */
+ #define	PTE_YR		(1UL << 55) /* Capability Read */
+ #define	PTE_YRG		(1UL << 56) /* Cap Read Generation */
+ #define	PTE_YW		(1UL << 57) /* Capability Write */
+ #define	PTE_YD		(1UL << 58) /* Capability Dirty */
+ 
+-#define	PTE_Y		(1UL << 58) /* Capability RW when sstatus.YRGE == 0 */
+-
+ #define	PTE_CW		PTE_YW
+ #define	PTE_CRG		PTE_YRG
+ #define	PTE_CHERI_MASK	(PTE_YR | PTE_YRG | PTE_YW | PTE_YD)
+ 
+ #define	PTE_CR_CLEAR	0
+-#ifdef CHERI_CAPREVOKE
+ #define	PTE_CR_OK	PTE_YR
+-#else
+-#define	PTE_CR_OK	PTE_Y
+-#endif
+ #define	PTE_CR_GEN	PTE_YR
+ 
+ #define	PTE_KERN_CHERI	(PTE_YR | PTE_YW | PTE_YD)
+ #define	PTE_PROMOTE_CHERI (PTE_YR | PTE_YRG | PTE_YW | PTE_YD)
++#else /* !CHERI_CAPREVOKE */
++/*
++ * Without Svyrg, bits 57:55 are reserved and bit 58 controls capability
++ * reads and writes.  Use the same encoding for bootstrap and pmap PTEs.
++ * There is no separate capability-dirty bit in this mode.
++ */
++#define	PTE_YR		PTE_Y
++#define	PTE_YW		PTE_Y
++#define	PTE_CW		PTE_Y
++#define	PTE_CHERI_MASK	PTE_Y
++
++#define	PTE_CR_CLEAR	0
++#define	PTE_CR_OK	PTE_Y
++
++#define	PTE_KERN_CHERI	PTE_Y
++#define	PTE_PROMOTE_CHERI PTE_Y
++#endif /* CHERI_CAPREVOKE */
+ #endif  /* defined(__riscv_y) */
+ #else /* !__has_feature(capabilities) */
+ #define	PTE_KERN_CHERI	0
+diff --git a/sys/riscv/riscv/locore.S b/sys/riscv/riscv/locore.S
+--- a/sys/riscv/riscv/locore.S
++++ b/sys/riscv/riscv/locore.S
+@@ -136,9 +136,13 @@
+ 	li	t0, SENVCFG_Y
+ 	csrs	senvcfg, t0
+ #ifdef __riscv_y
+-	/* Enable Sycrg for S- and U-modes */
++	/* Use generation-based tracking only with capability revocation. */
+ 	li	t0, SSTATUS_YRGE
++#ifdef CHERI_CAPREVOKE
+ 	csrs	sstatus, t0
++#else
++	csrc	sstatus, t0
++#endif
+ #endif
+ #endif
+ .endmacro

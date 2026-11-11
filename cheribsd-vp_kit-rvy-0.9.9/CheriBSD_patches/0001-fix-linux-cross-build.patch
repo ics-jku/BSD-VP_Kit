@@ -1,0 +1,322 @@
+diff --git a/contrib/mandoc/mdoc.c b/contrib/mandoc/mdoc.c
+index 475a6aa0ddb3..05a3ab8c4d06 100644
+--- a/contrib/mandoc/mdoc.c
++++ b/contrib/mandoc/mdoc.c
+@@ -165,8 +165,7 @@ static int
+ mdoc_ptext(struct roff_man *mdoc, int line, char *buf, int offs)
+ {
+ 	struct roff_node *n;
+-	const char	 *cp, *sp;
+-	char		 *c, *ws, *end;
++	char		 *c, *cp, *sp, *ws, *end;
+ 
+ 	n = mdoc->last;
+ 
+diff --git a/contrib/mandoc/read.c b/contrib/mandoc/read.c
+index 0e8d32df5a5e..c20352c2b6ff 100644
+--- a/contrib/mandoc/read.c
++++ b/contrib/mandoc/read.c
+@@ -629,10 +629,11 @@ int
+ mparse_open(struct mparse *curp, const char *file)
+ {
+ 	char		 *cp;
++	const char	 *ext;
+ 	int		  fd, save_errno;
+ 
+-	cp = strrchr(file, '.');
+-	curp->gzip = (cp != NULL && ! strcmp(cp + 1, "gz"));
++	ext = strrchr(file, '.');
++	curp->gzip = (ext != NULL && ! strcmp(ext + 1, "gz"));
+ 
+ 	/* First try to use the filename as it is. */
+ 
+diff --git a/contrib/tzcode/zic.c b/contrib/tzcode/zic.c
+index 2605f65dcd23..3b6d75449748 100644
+--- a/contrib/tzcode/zic.c
++++ b/contrib/tzcode/zic.c
+@@ -2877,7 +2877,7 @@ doabbr(char *abbr, struct zone const *zp, char const *letters,
+        bool isdst, zic_t save, bool doquotes)
+ {
+ 	register char *	cp;
+-	register char *	slashp;
++	register char const *slashp;
+ 	ptrdiff_t len;
+ 	char const *format = zp->z_format;
+ 
+diff --git a/lib/libc/stdlib/getopt.c b/lib/libc/stdlib/getopt.c
+index 2b5e3fa69032..2e372c12b5cf 100644
+--- a/lib/libc/stdlib/getopt.c
++++ b/lib/libc/stdlib/getopt.c
+@@ -57,7 +57,7 @@ int
+ getopt(int nargc, char * const nargv[], const char *ostr)
+ {
+ 	static char *place = EMSG;		/* option letter processing */
+-	char *oli;				/* option letter list index */
++	const char *oli;				/* option letter list index */
+ 
+ 	if (optreset || *place == 0) {		/* update scanning pointer */
+ 		optreset = 0;
+diff --git a/lib/libc/stdlib/getopt_long.c b/lib/libc/stdlib/getopt_long.c
+index 5cf6a55649bd..c98127e140ce 100644
+--- a/lib/libc/stdlib/getopt_long.c
++++ b/lib/libc/stdlib/getopt_long.c
+@@ -349,7 +349,7 @@ static int
+ getopt_internal(int nargc, char * const *nargv, const char *options,
+ 	const struct option *long_options, int *idx, int flags)
+ {
+-	char *oli;				/* option letter list index */
++	const char *oli;				/* option letter list index */
+ 	int optchar, short_too;
+ 	static int posixly_correct = -1;
+ 
+diff --git a/sys/tools/embed_mfs.sh b/sys/tools/embed_mfs.sh
+index 9bf5e52202b1..6cf6057be0c1 100644
+--- a/sys/tools/embed_mfs.sh
++++ b/sys/tools/embed_mfs.sh
+@@ -42,18 +42,33 @@ if [ ! -w "$1" ]; then
+ 	exit 1
+ fi
+ 
+-mfs_size=`stat -f '%z' $2 2> /dev/null`
++mfs_size=`stat -f '%z' "$2" 2> /dev/null`
++case "${mfs_size}" in
++''|*[!0-9]*)
++	mfs_size=`stat -c '%s' "$2" 2> /dev/null`
++	;;
++esac
+ # If we can't determine MFS image size - bail.
+-if [ -z ${mfs_size} ]; then
++if [ -z "${mfs_size}" ]; then
+ 	echo "Can't determine MFS image size"
+ 	exit 1
+ fi
+ 
+ err_no_mfs="Can't locate mfs section within "
+ 
+-if file -b $1 | grep -q '^ELF ..-bit .SB executable'; then
++file_cmd=${FILE:-file}
++if ! command -v "${file_cmd}" >/dev/null 2>&1 && [ -x /usr/bin/file ]; then
++	file_cmd=/usr/bin/file
++fi
++
++strings_cmd=${STRINGS:-strings}
++if ! command -v "${strings_cmd}" >/dev/null 2>&1 && [ -x /usr/bin/strings ]; then
++	strings_cmd=/usr/bin/strings
++fi
++
++if "${file_cmd}" -b "$1" | grep -q '^ELF ..-bit .SB executable'; then
+ 
+-	sec_info=`elfdump -c $1 2> /dev/null | grep -A 5 -E "sh_name: oldmfs$"`
++	sec_info=`elfdump -c "$1" 2> /dev/null | grep -A 5 -E "sh_name: oldmfs$"`
+ 	# If we can't find the mfs section within the given kernel - bail.
+ 	if [ -z "${sec_info}" ]; then
+ 		echo "${err_no_mfs} $1"
+@@ -67,12 +82,12 @@ if file -b $1 | grep -q '^ELF ..-bit .SB executable'; then
+ else
+ 
+ 	#try to find start byte of MFS start flag otherwise - bail.
+-	sec_start=`strings -at d $1 | grep "MFS Filesystem goes here"` || \
++	sec_start=`"${strings_cmd}" -at d "$1" | grep "MFS Filesystem goes here"` || \
+ 	    { echo "${err_no_mfs} $1"; exit 1; }
+ 	sec_start=`echo ${sec_start} | awk '{print $1}'`
+ 
+ 	#try to find start byte of MFS end flag otherwise - bail.
+-	sec_end=`strings -at d $1 | \
++	sec_end=`"${strings_cmd}" -at d "$1" | \
+ 	    grep "MFS Filesystem had better STOP here"` || \
+ 	    { echo "${err_no_mfs} $1"; exit 1; }
+ 	sec_end=`echo ${sec_end} | awk '{print $1}'`
+diff --git a/tools/build/cross-build/include/common/sys/cdefs.h b/tools/build/cross-build/include/common/sys/cdefs.h
+index 3f9b7866141f..e560a8382d6a 100644
+--- a/tools/build/cross-build/include/common/sys/cdefs.h
++++ b/tools/build/cross-build/include/common/sys/cdefs.h
+@@ -151,7 +151,7 @@
+ #endif
+ #endif
+ 
+-#ifndef __unused
++#if !defined(__unused) && !defined(__unused_suppressed_for_system_header)
+ #define __unused __attribute__((unused))
+ #endif
+ #define __format_arg(fmtarg) __attribute__((__format_arg__(fmtarg)))
+diff --git a/tools/build/cross-build/include/linux/__unused_workaround_end.h b/tools/build/cross-build/include/linux/__unused_workaround_end.h
+index 728e25ead9b0..e2f82c66edc7 100644
+--- a/tools/build/cross-build/include/linux/__unused_workaround_end.h
++++ b/tools/build/cross-build/include/linux/__unused_workaround_end.h
+@@ -38,3 +38,10 @@
+ #undef __unused_undefd
+ #define __unused __attribute__((unused))
+ #endif
++#ifdef __unused_was_undefined
++#undef __unused_was_undefined
++#define __unused __attribute__((unused))
++#endif
++#ifdef __unused_suppressed_for_system_header
++#undef __unused_suppressed_for_system_header
++#endif
+diff --git a/tools/build/cross-build/include/linux/__unused_workaround_start.h b/tools/build/cross-build/include/linux/__unused_workaround_start.h
+index e01d5fc9971d..2dd39c9fa701 100644
+--- a/tools/build/cross-build/include/linux/__unused_workaround_start.h
++++ b/tools/build/cross-build/include/linux/__unused_workaround_start.h
+@@ -34,6 +34,12 @@
+  * SUCH DAMAGE.
+  */
+ /* Used to workaround system headers with struct members called __unused */
++#ifdef __cplusplus
++#define __unused_suppressed_for_system_header
++#ifndef __unused
++#define __unused_was_undefined
++#endif
++#endif
+ #ifdef __unused
+ #undef __unused
+ #define __unused_undefd
+diff --git a/tools/build/cross-build/include/linux/sys/types.h b/tools/build/cross-build/include/linux/sys/types.h
+index 2e09cbb62271..158889a66e3b 100644
+--- a/tools/build/cross-build/include/linux/sys/types.h
++++ b/tools/build/cross-build/include/linux/sys/types.h
+@@ -56,7 +56,9 @@ typedef uint16_t __uint16_t;
+ typedef uint8_t  __uint8_t;
+ #endif
+ 
++#include "../__unused_workaround_start.h"
+ #include_next <sys/types.h>
++#include "../__unused_workaround_end.h"
+ 
+ /*
+  * stddef.h for both gcc and clang will define __size_t when size_t has
+diff --git a/tools/build/mk/Makefile.boot b/tools/build/mk/Makefile.boot
+index 43246f3ceebf..916a4a79df81 100644
+--- a/tools/build/mk/Makefile.boot
++++ b/tools/build/mk/Makefile.boot
+@@ -38,7 +38,10 @@ CWARNFLAGS.clang+=-Wno-typedef-redefinition
+ # bsd.sys.mk explicitly turns on -Wsystem-headers, but that's extremely
+ # noisy when building on Linux.
+ CWARNFLAGS+=	-Wno-system-headers
+-CWARNFLAGS.clang+=-Werror=incompatible-pointer-types-discards-qualifiers
++# Newer host clang versions diagnose old bootstrap-tool const conversions.
++# Keep the warning visible, but do not make Linux cross-build bootstrap depend
++# on cleaning up every host utility before the target world can build.
++CWARNFLAGS.clang+=-Wno-error=incompatible-pointer-types-discards-qualifiers
+ 
+ # b64_pton and b64_ntop is in libresolv on MacOS and Linux:
+ # TODO: only needed for uuencode and uudecode
+diff --git a/usr.bin/m4/misc.c b/usr.bin/m4/misc.c
+index d641ec56afeb..ec84cf365e13 100644
+--- a/usr.bin/m4/misc.c
++++ b/usr.bin/m4/misc.c
+@@ -70,7 +70,7 @@ unsigned char *endpbb;			/* end of push-back buffer     */
+ ptrdiff_t
+ indx(const char *s1, const char *s2)
+ {
+-	char *t;
++	const char *t;
+ 
+ 	t = strstr(s1, s2);
+ 	if (t == NULL)
+diff --git a/usr.bin/mkimg/mkimg.c b/usr.bin/mkimg/mkimg.c
+index 3cd9b03c06e9..85c0de1821ad 100644
+--- a/usr.bin/mkimg/mkimg.c
++++ b/usr.bin/mkimg/mkimg.c
+@@ -238,7 +238,8 @@ static int
+ parse_part(const char *spec)
+ {
+ 	struct part *part;
+-	char *sep;
++	char *label_sep;
++	const char *spec_sep;
+ 	size_t len;
+ 	int error;
+ 
+@@ -251,12 +252,12 @@ parse_part(const char *spec)
+ 	if (part == NULL)
+ 		return (ENOMEM);
+ 
+-	sep = strchr(spec, ':');
+-	if (sep == NULL) {
++	spec_sep = strchr(spec, ':');
++	if (spec_sep == NULL) {
+ 		error = EINVAL;
+ 		goto errout;
+ 	}
+-	len = sep - spec + 1;
++	len = spec_sep - spec + 1;
+ 	if (len < 2) {
+ 		error = EINVAL;
+ 		goto errout;
+@@ -267,7 +268,7 @@ parse_part(const char *spec)
+ 		goto errout;
+ 	}
+ 	strlcpy(part->alias, spec, len);
+-	spec = sep + 1;
++	spec = spec_sep + 1;
+ 
+ 	switch (*spec) {
+ 	case ':':
+@@ -292,14 +293,14 @@ parse_part(const char *spec)
+ 	}
+ 
+ 	spec = part->alias;
+-	sep = strchr(spec, '/');
+-	if (sep != NULL) {
+-		*sep++ = '\0';
+-		if (strlen(part->alias) == 0 || strlen(sep) == 0) {
++	label_sep = strchr(part->alias, '/');
++	if (label_sep != NULL) {
++		*label_sep++ = '\0';
++		if (strlen(part->alias) == 0 || strlen(label_sep) == 0) {
+ 			error = EINVAL;
+ 			goto errout;
+ 		}
+-		part->label = strdup(sep);
++		part->label = strdup(label_sep);
+ 		if (part->label == NULL) {
+ 			error = ENOMEM;
+ 			goto errout;
+diff --git a/usr.bin/rpcgen/rpc_main.c b/usr.bin/rpcgen/rpc_main.c
+index 8d5afad86cff..4c69be1ed333 100644
+--- a/usr.bin/rpcgen/rpc_main.c
++++ b/usr.bin/rpcgen/rpc_main.c
+@@ -868,7 +868,8 @@ static void mkfile_output(struct commandline *cmd)
+ {
+ 	const char *mkfilename, *clientname, *clntname, *xdrname, *hdrname;
+ 	const char *servername, *svcname, *servprogname, *clntprogname;
+-	char *temp, *mkftemp;
++	const char *temp;
++	char *mkftemp;
+ 
+ 	svcname = file_name(cmd->infile, "_svc.c");
+ 	clntname = file_name(cmd->infile, "_clnt.c");
+diff --git a/usr.bin/rpcgen/rpc_svcout.c b/usr.bin/rpcgen/rpc_svcout.c
+index 2c6849714d75..efe7c4700383 100644
+--- a/usr.bin/rpcgen/rpc_svcout.c
++++ b/usr.bin/rpcgen/rpc_svcout.c
+@@ -32,6 +32,7 @@
+  * Copyright (C) 1987, Sun Microsystems, Inc.
+  */
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include "rpc_parse.h"
+ #include "rpc_scan.h"
+@@ -931,14 +932,16 @@ write_rpc_svc_fg(const char *infile, const char *sp)
+ static void
+ open_log_file(const char *infile, const char *sp)
+ {
++	char *logname;
+ 	char *s;
+ 
+-	s = strrchr(infile, '.');
++	logname = xstrdup(infile);
++	s = strrchr(logname, '.');
+ 	if (s)
+ 		*s = '\0';
+-	f_print(fout, "%sopenlog(\"%s\", LOG_PID, LOG_DAEMON);\n", sp, infile);
+-	if (s)
+-		*s = '.';
++	f_print(fout, "%sopenlog(\"%s\", LOG_PID, LOG_DAEMON);\n", sp,
++	    logname);
++	free(logname);
+ }
+ 
+ 

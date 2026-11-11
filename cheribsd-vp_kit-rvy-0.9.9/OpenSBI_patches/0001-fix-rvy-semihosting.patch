@@ -1,0 +1,13 @@
+diff --git a/lib/utils/serial/semihosting.c b/lib/utils/serial/semihosting.c
+index 7be479dd..9001958d 100644
+--- a/lib/utils/serial/semihosting.c
++++ b/lib/utils/serial/semihosting.c
+@@ -64,7 +64,7 @@ bool semihosting_enabled(void)
+ 		"	.type  _semihost_test_vector, @function\n"
+ 		"_semihost_test_vector:\n"
+ 		"	csrr %[tmp], " STR(CSR_MEPC) "\n"
+-		"	add %[tmp], %[tmp], 4\n"
++			"	" STR(PREG_ADDI) " %[tmp], %[tmp], 4\n"
+ 		"	csrw  " STR(CSR_MEPC) ", %[tmp]\n"
+ 		"	add %[en], zero, zero\n"
+ 		"	mret\n"

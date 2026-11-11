@@ -10,8 +10,9 @@ Refer to the README files in the respective subdirectories for
 build instructions and further details.
 
 ## Contents
-* cheribsd-vp-kit-isav9: CheriBSD targeting RV64 with CHERI-ISAv9
-* freebsd-vp-kit: FreeBSD targeting RV64
+* [cheribsd-vp_kit-isav9](cheribsd-vp_kit-isav9): CheriBSD targeting RV64 with CHERI-ISAv9
+* [cheribsd-vp_kit-rvy-0.9.9](cheribsd-vp_kit-rvy-0.9.9): CheriBSD targeting RV64 with RVY 0.9.9
+* [freebsd-vp_kit](freebsd-vp_kit): FreeBSD targeting RV64
 
 ## Publications
 The following publications describe research conducted using one or more of these kits:

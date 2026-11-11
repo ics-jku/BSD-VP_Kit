@@ -1,0 +1,199 @@
+diff --git a/tools/build/cross-build/include/linux/algorithm b/tools/build/cross-build/include/linux/algorithm
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/algorithm
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <algorithm>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/cstdio b/tools/build/cross-build/include/linux/cstdio
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/cstdio
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <cstdio>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/cstdlib b/tools/build/cross-build/include/linux/cstdlib
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/cstdlib
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <cstdlib>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/cstring b/tools/build/cross-build/include/linux/cstring
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/cstring
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <cstring>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/functional b/tools/build/cross-build/include/linux/functional
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/functional
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <functional>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/iostream b/tools/build/cross-build/include/linux/iostream
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/iostream
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <iostream>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/limits b/tools/build/cross-build/include/linux/limits
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/limits
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <limits>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/map b/tools/build/cross-build/include/linux/map
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/map
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <map>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/memory b/tools/build/cross-build/include/linux/memory
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/memory
+@@ -0,0 +1,12 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++/*
++ * GCC 15's C++ headers can include glibc pthread internals with fields named
++ * __unused.  Keep FreeBSD's __unused macro from rewriting those field names.
++ */
++#include "__unused_workaround_start.h"
++#include_next <memory>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/sstream b/tools/build/cross-build/include/linux/sstream
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/sstream
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <sstream>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/stack b/tools/build/cross-build/include/linux/stack
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/stack
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <stack>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/string b/tools/build/cross-build/include/linux/string
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/string
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <string>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/unordered_map b/tools/build/cross-build/include/linux/unordered_map
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/unordered_map
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <unordered_map>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/unordered_set b/tools/build/cross-build/include/linux/unordered_set
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/unordered_set
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <unordered_set>
++#include "__unused_workaround_end.h"
+diff --git a/tools/build/cross-build/include/linux/vector b/tools/build/cross-build/include/linux/vector
+new file mode 100644
+--- /dev/null
++++ b/tools/build/cross-build/include/linux/vector
+@@ -0,0 +1,8 @@
++/*-
++ * SPDX-License-Identifier: BSD-2-Clause
++ */
++#pragma once
++
++#include "__unused_workaround_start.h"
++#include_next <vector>
++#include "__unused_workaround_end.h"
